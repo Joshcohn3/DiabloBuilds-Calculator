@@ -1,0 +1,26 @@
+{
+  "name": "calculator",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsup src/index.ts --minify --dts",
+    "clean": "git clean -xdf dist node_modules",
+    "dev": "tsup src/index.ts --watch --dts"
+  },
+  "dependencies": {
+    "data": "workspace:*"
+  },
+  "devDependencies": {
+    "eslint": "^8.56.0",
+    "eslint-config-diablobuilds": "workspace:*",
+    "tsup": "^8.0.2",
+    "typescript": "^5.4.5"
+  },
+  "eslintConfig": {
+    "root": true,
+    "extends": [
+      "eslint-config-diablobuilds/base"
+    ]
+  }
+}

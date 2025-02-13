@@ -1,0 +1,775 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "client"
+}
+
+generator json {
+  provider = "prisma-json-types-generator"
+}
+
+datasource db {
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+model Post {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  title     String   @db.VarChar(255)
+  content   String?
+  published Boolean  @default(false)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+
+  @@index([authorId])
+}
+
+model User {
+  id       String    @id @unique
+  email    String?   @unique
+  posts    Post[]
+  username Username?
+  builds   Build[]
+
+  createdAt DateTime @default(now())
+}
+
+model Username {
+  display     String @unique // This field preserves casing on the username
+  displaySlug String @unique // This field is lowercased for safe use in URLs
+  userId      String @id @unique
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Skill {
+  id               Int                       @id @default(autoincrement())
+  name             String                    @unique @db.VarChar(255)
+  slug             String                    @unique
+  imageUrl         String?
+  class            PlayerClass
+  displayName      String?
+  type             SkillType
+  tags             Tag[]
+  abilities        SkillAbility[]
+  filters          Filter[]
+  descriptions     SkillDescription[]
+  extras           Extra[]
+  descriptionList  SkillDescriptionList[]
+  values           SkillValue[]
+  descriptions2    SkillDescriptionTwo[]
+  descriptionList2 SkillDescriptionListTwo[]
+  summons          SkillNecromancerSummon[]
+}
+
+model Tag {
+  id     Int     @id @default(autoincrement())
+  name   String  @unique
+  skills Skill[]
+}
+
+model SkillAbility {
+  id          Int          @id @default(autoincrement())
+  value       Float
+  format      NumberFormat
+  type        AbilityType
+  valueSlot   SkillTags?
+  valueString String?
+  skillId     Int
+  abilityId   Int
+  skill       Skill        @relation(fields: [skillId], references: [id])
+  ability     Ability      @relation(fields: [abilityId], references: [id])
+
+  @@unique([skillId, abilityId])
+  @@index([skillId])
+  @@index([abilityId])
+}
+
+model Ability {
+  id           Int            @id @default(autoincrement())
+  name         String         @unique
+  skillAbility SkillAbility[]
+}
+
+model Filter {
+  id     Int     @id @default(autoincrement())
+  name   String  @unique
+  skills Skill[]
+}
+
+model SkillDescription {
+  id      Int    @id @default(autoincrement())
+  text    String @db.VarChar(2000)
+  skillId Int
+  skill   Skill  @relation(fields: [skillId], references: [id])
+
+  @@index([skillId])
+}
+
+model SkillDescriptionTwo {
+  id      Int    @id @default(autoincrement())
+  text    String @db.VarChar(2000)
+  skillId Int
+  skill   Skill  @relation(fields: [skillId], references: [id])
+
+  @@index([skillId])
+}
+
+model SkillDescriptionList {
+  id      Int    @id @default(autoincrement())
+  text    String @db.VarChar(2000)
+  skillId Int
+  Skill   Skill  @relation(fields: [skillId], references: [id])
+
+  @@index([skillId])
+}
+
+model SkillDescriptionListTwo {
+  id      Int    @id @default(autoincrement())
+  text    String @db.VarChar(2000)
+  skillId Int
+  Skill   Skill  @relation(fields: [skillId], references: [id])
+
+  @@index([skillId])
+}
+
+model Extra {
+  id    Int     @id @default(autoincrement())
+  name  String  @unique
+  skill Skill[]
+}
+
+model SkillValue {
+  id         Int          @id @default(autoincrement())
+  slotName   SkillTags
+  baseValue  Float
+  multiplier Float
+  format     NumberFormat
+  skillId    Int
+  skill      Skill        @relation(fields: [skillId], references: [id])
+
+  @@unique([slotName, skillId])
+  @@index([skillId])
+}
+
+model SkillNecromancerSummon {
+  id          Int                      @id @default(autoincrement())
+  name        String
+  description String                   @db.VarChar(2000)
+  skillId     Int
+  skill       Skill                    @relation(fields: [skillId], references: [id])
+  extras      NecromancerSummonExtra[]
+
+  @@unique([name, skillId])
+  @@index([skillId])
+}
+
+model NecromancerSummonExtra {
+  id       Int                    @id @default(autoincrement())
+  text     String                 @db.VarChar(2000)
+  summonId Int
+  summon   SkillNecromancerSummon @relation(fields: [summonId], references: [id])
+
+  @@index([summonId])
+}
+
+model ParagonNode {
+  id                       Int         @id @default(autoincrement())
+  class                    PlayerClass
+  board                    String
+  boardIndex               Int
+  row                      Int
+  column                   Int
+  jsonName                 String?
+  name                     String?
+  rarity                   String?
+  description              String?     @db.VarChar(2000)
+  mod1                     String?
+  value1                   Float?
+  mod2                     String?
+  value2                   Float?
+  mod3                     String?
+  value3                   Float?
+  mod4                     String?
+  value4                   Float?
+  bonusMod                 String?     @db.VarChar(2000)
+  bonusValue               Float?
+  bonusDescription         String?     @db.VarChar(2000)
+  bonusRequirementMod1     String?
+  bonusRequirementValue1   Float?
+  bonusRequirementScaling1 Float?
+  bonusRequirementMod2     String?
+  bonusRequirementValue2   Float?
+  bonusRequirementScaling2 Float?
+}
+
+// Deprecated, use Build instead
+model SharedBuilds {
+  id          String    @id @default(uuid())
+  hash        String    @db.Text
+  body        String    @db.LongText
+  name        String?
+  userId      String?
+  playerClass String?
+  createdAt   DateTime? @default(now())
+  updatedAt   DateTime? @updatedAt
+
+  @@index([userId])
+}
+
+// The /// comments above the Json fields are used by the Prisma JSON generator
+// to generate types for the JSON fields specified in the json-types.ts file.
+// https://github.com/arthurfiorette/prisma-json-types-generator
+model Build {
+  id                    String      @id @default(uuid())
+  name                  String
+  playerClass           PlayerClass
+  /// [SkillTreeState]
+  skillTreeState        Json
+  /// [CharacterBuilderState]
+  characterBuilderState Json
+  /// [ParagonState]
+  paragonState          Json
+  /// [ConfigState]
+  configState           Json
+  level                 Int
+  userId                String?
+  user                  User?       @relation(fields: [userId], references: [id])
+  private               Boolean     @default(true)
+  season                Season      @default(TWO)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model ModifierType {
+  slug            String    @id
+  name            String
+  units           String?
+  weaponGemTypes  GemType[] @relation("weapon")
+  jewelryGemTypes GemType[] @relation("jewelry")
+  armorGemTypes   GemType[] @relation("armor")
+}
+
+model GemType {
+  slug                String       @id
+  name                String
+  weaponModifierSlug  String
+  jewelryModifierSlug String
+  armorModifierSlug   String
+  imageUrl            String
+  weaponModifier      ModifierType @relation("weapon", fields: [weaponModifierSlug], references: [slug])
+  jewelryModifier     ModifierType @relation("jewelry", fields: [jewelryModifierSlug], references: [slug])
+  armorModifier       ModifierType @relation("armor", fields: [armorModifierSlug], references: [slug])
+  gems                Gem[]
+
+  @@index([weaponModifierSlug])
+  @@index([jewelryModifierSlug])
+  @@index([armorModifierSlug])
+}
+
+model Gem {
+  slug                 String  @id
+  gemTypeSlug          String
+  name                 String
+  levelRequirement     Int
+  weaponModifierValue  Float
+  armorModifierValue   Float
+  jewelryModifierValue Float
+  upgradeGoldCost      Int
+  imageUrl             String
+  gemType              GemType @relation(fields: [gemTypeSlug], references: [slug])
+
+  @@index([gemTypeSlug])
+}
+
+model SideQuest {
+  id                 String                 @id @default(uuid())
+  filename           String                 @unique
+  title              String                 @db.LongText
+  slug               String                 @unique
+  region             String
+  zone               String
+  startedBy          String
+  renown             Int
+  goldAndExperience  String
+  durationMinutes    Int
+  durationSeconds    Int
+  itemReward         String
+  questChain         String
+  strongholdRequired String
+  dungeonRequired    String
+  levelRequired      Int
+  prerequesiteQuest  String
+  smallMap           String
+  bigMap             String
+  objectives         SideQuestObjective[]
+  keyLocations       SideQuestKeyLocation[]
+}
+
+model SideQuestObjective {
+  id          String    @id @default(uuid())
+  title       String    @db.VarChar(2000)
+  description String    @db.VarChar(2000)
+  sideQuestId String
+  SideQuest   SideQuest @relation(fields: [sideQuestId], references: [id])
+
+  @@index([sideQuestId])
+}
+
+model SideQuestKeyLocation {
+  id            String    @id @default(uuid())
+  imageFilename String
+  title         String    @db.VarChar(2000)
+  sideQuestId   String
+  SideQuest     SideQuest @relation(fields: [sideQuestId], references: [id])
+
+  @@index([sideQuestId])
+}
+
+model MalignantHeart {
+  id                 Int    @id @default(autoincrement())
+  class              String
+  name               String
+  slug               String @unique
+  type               String
+  description        String @db.VarChar(2000)
+  minValue1          Float?
+  maxValue1          Float?
+  value1LevelScaling Float
+  value1Display      String
+  minValue2          Float?
+  maxValue2          Float?
+  value2LevelScaling Float
+  value2Display      String
+  imageUrl           String @db.VarChar(2000)
+  category           String
+}
+
+model ItemPowerTable {
+  itemPower             Int   @id
+  flatValueMultiplier   Int
+  oneHandWeaponDps      Int
+  twoHandWeaponDps      Int
+  helmArmor             Int
+  pantsArmor            Int
+  bootsArmor            Int
+  glovesArmor           Int
+  amuletImplicitValue   Float
+  ringImplicitValue     Float
+  chestArmor            Int
+  scytheImplicit        Int?
+  shieldThornsImplicit  Int?
+  twoHandScytheImplicit Int?
+}
+
+model AffixModifierTable {
+  id             Int     @id
+  modifierName   String
+  modifierSlug   String
+  equipmentType  String
+  equipmentSlug  String
+  itemPower      Int
+  minValue       Float
+  maxValue       Float
+  displaySymbol  String
+  classSpecific1 String?
+  classSpecific2 String?
+  classSpecific3 String?
+  classSpecific4 String?
+  description    String  @default("") @db.VarChar(2000)
+  uniqueName     String?
+  uniqueNameSlug String?
+}
+
+model AspectTable {
+  id            Int     @id
+  class         String
+  classSlug     String
+  category      String
+  categorySlug  String
+  name          String
+  nameSlug      String
+  type          String
+  typeSlug      String
+  description   String  @db.VarChar(2000)
+  valueMin1     Float?
+  valueMax1     Float?
+  valueDisplay1 String?
+  valueMin2     Float?
+  valueMax2     Float?
+  valueDisplay2 String?
+  imageUrl      String  @default("")
+}
+
+model UniqueTable {
+  id                   Int     @id
+  class                String
+  name                 String
+  nameSlug             String
+  equipmentType        String
+  uniquePower          String  @db.VarChar(2000)
+  itemPower            Int
+  uniquePowerValueMin1 Float?
+  uniquePowerValueMax1 Float?
+  uniqueValueDisplay1  String?
+  uniquePowerValueMin2 Float?
+  uniquePowerValueMax2 Float?
+  uniqueValueDisplay2  String?
+  implicitName1        String?
+  implicitSlug1        String?
+  implicitName2        String?
+  implicitSlug2        String?
+  modName1             String?
+  modSlug1             String?
+  modName2             String?
+  modSlug2             String?
+  modName3             String?
+  modSlug3             String?
+  modName4             String?
+  modSlug4             String?
+  modValueMin1         Float?
+  modValueMax1         Float?
+  modValueMin2         Float?
+  modValueMax2         Float?
+  modValueMin3         Float?
+  modValueMax3         Float?
+  modValueMin4         Float?
+  modValueMax4         Float?
+}
+
+model EquipmentTable {
+  id                        Int     @id @default(autoincrement())
+  equipmentType             String
+  equipmentSlug             String
+  implicitName              String?
+  implicitSlug              String?
+  barbarian                 Float?
+  sorcerer                  Float?
+  rogue                     Float?
+  necromancer               Float?
+  druid                     Float?
+  weaponAttackSpeed         Float?
+  modifierMultiplier        Float?
+  offensiveAspectMultiplier Float?
+  defensiveAspectMultiplier Float?
+  resourceAspectMultiplier  Float?
+  utilityAspectMultiplier   Float?
+  mobilityAspectMultiplier  Float?
+}
+
+model ImplicitTable {
+  id                       Int     @id @default(autoincrement())
+  equipmentType            String
+  equipmentTypeSlug        String
+  itemPower                Int
+  implicitModifierName     String
+  implicitModifierSlugName String
+  implicitMinValue         Float
+  implicitMaxValue         Float
+  displaySymbol            String
+  displayType              String
+  description              String? @db.VarChar(2000)
+}
+
+model ClassMechanicsTable {
+  id           Int     @id
+  class        String
+  type         String
+  subType      String?
+  name         String  @unique
+  slug         String  @unique
+  value        Float?
+  description  String? @db.VarChar(2000)
+  description2 String? @db.VarChar(2000)
+}
+
+model ParagonGlyph {
+  id                       Int     @id
+  class                    String
+  name                     String
+  nameSlug                 String?
+  rarity                   String
+  description              String  @db.VarChar(2000)
+  mod                      String?
+  displayValue             Float
+  calculatorValuePerPoint  Float
+  levelScaling             Float
+  maxGlyphLevel            Int?
+  scalingMod               String?
+  scalingNodes             String?
+  BonusDescription         String? @db.VarChar(2000)
+  BonusRequirementMod      String?
+  BonusRequirementValue    Int?
+  image                    String?
+  description2             String? @db.VarChar(2000)
+  displayValue2            Float?
+  calculatorValuePerPoint2 Float?
+  levelScaling2            Float?
+  scalingNodes2            String?
+  baseRadius               Int?
+  radiusIncrease           Int?
+}
+
+model ParagonBarbarian {
+  id                       Int         @id @default(autoincrement())
+  class                    PlayerClass
+  board                    String
+  boardIndex               Int
+  row                      Int
+  column                   Int
+  jsonName                 String?
+  name                     String?
+  rarity                   String?
+  description              String?     @db.VarChar(2000)
+  mod1                     String?
+  value1                   Float?
+  mod2                     String?
+  value2                   Float?
+  mod3                     String?
+  value3                   Float?
+  mod4                     String?
+  value4                   Float?
+  bonusMod                 String?
+  bonusValue               Float?
+  bonusDescription         String?     @db.VarChar(2000)
+  bonusRequirementMod1     String?
+  bonusRequirementValue1   Float?
+  bonusRequirementScaling1 Int?
+  bonusRequirementMod2     String?
+  bonusRequirementValue2   Float?
+  bonusRequirementScaling2 Int?
+}
+
+model ParagonNecromancer {
+  id                       Int         @id @default(autoincrement())
+  class                    PlayerClass
+  board                    String
+  boardIndex               Int
+  row                      Int
+  column                   Int
+  jsonName                 String?
+  name                     String?
+  rarity                   String?
+  description              String?     @db.VarChar(2000)
+  mod1                     String?
+  value1                   Float?
+  mod2                     String?
+  value2                   Float?
+  mod3                     String?
+  value3                   Float?
+  mod4                     String?
+  value4                   Float?
+  bonusMod                 String?
+  bonusValue               Float?
+  bonusDescription         String?     @db.VarChar(2000)
+  bonusRequirementMod1     String?
+  bonusRequirementValue1   Float?
+  bonusRequirementScaling1 Int?
+  bonusRequirementMod2     String?
+  bonusRequirementValue2   Float?
+  bonusRequirementScaling2 Int?
+}
+
+model ParagonSorcerer {
+  id                       Int         @id @default(autoincrement())
+  class                    PlayerClass
+  board                    String
+  boardIndex               Int
+  row                      Int
+  column                   Int
+  jsonName                 String?
+  name                     String?
+  rarity                   String?
+  description              String?     @db.VarChar(2000)
+  mod1                     String?
+  value1                   Float?
+  mod2                     String?
+  value2                   Float?
+  mod3                     String?
+  value3                   Float?
+  mod4                     String?
+  value4                   Float?
+  bonusMod                 String?
+  bonusValue               Float?
+  bonusDescription         String?     @db.VarChar(2000)
+  bonusRequirementMod1     String?
+  bonusRequirementValue1   Float?
+  bonusRequirementScaling1 Int?
+  bonusRequirementMod2     String?
+  bonusRequirementValue2   Float?
+  bonusRequirementScaling2 Int?
+}
+
+model ParagonRogue {
+  id                       Int         @id @default(autoincrement())
+  class                    PlayerClass
+  board                    String
+  boardIndex               Int
+  row                      Int
+  column                   Int
+  jsonName                 String?
+  name                     String?
+  rarity                   String?
+  description              String?     @db.VarChar(2000)
+  mod1                     String?
+  value1                   Float?
+  mod2                     String?
+  value2                   Float?
+  mod3                     String?
+  value3                   Float?
+  mod4                     String?
+  value4                   Float?
+  bonusMod                 String?
+  bonusValue               Float?
+  bonusDescription         String?     @db.VarChar(2000)
+  bonusRequirementMod1     String?
+  bonusRequirementValue1   Float?
+  bonusRequirementScaling1 Int?
+  bonusRequirementMod2     String?
+  bonusRequirementValue2   Float?
+  bonusRequirementScaling2 Int?
+}
+
+model ParagonDruid {
+  id                       Int         @id @default(autoincrement())
+  class                    PlayerClass
+  board                    String
+  boardIndex               Int
+  row                      Int
+  column                   Int
+  jsonName                 String?
+  name                     String?
+  rarity                   String?
+  description              String?     @db.VarChar(2000)
+  mod1                     String?
+  value1                   Float?
+  mod2                     String?
+  value2                   Float?
+  mod3                     String?
+  value3                   Float?
+  mod4                     String?
+  value4                   Float?
+  bonusMod                 String?
+  bonusValue               Float?
+  bonusDescription         String?     @db.VarChar(2000)
+  bonusRequirementMod1     String?
+  bonusRequirementValue1   Float?
+  bonusRequirementScaling1 Int?
+  bonusRequirementMod2     String?
+  bonusRequirementValue2   Float?
+  bonusRequirementScaling2 Int?
+}
+
+model VampiricPower {
+  id                   Int     @id
+  name                 String
+  nameSlug             String
+  description          String  @db.VarChar(2000)
+  category             String
+  divinity             Int
+  eternity             Int
+  ferocity             Int
+  maxLevel             Int?
+  baseValue            Float?
+  valueScalingPerLevel Float?
+  displaySymbol        String
+  imageUrl             String? @db.VarChar(2000)
+}
+
+model SeneschalConstruct {
+  id          Int     @id
+  name        String
+  nameSlug    String
+  category    String
+  description String  @db.VarChar(2000)
+  maxLevel    Int?
+  imageUrl    String? @db.VarChar(2000)
+}
+
+model SkillTable {
+  id                 Int     @id
+  name               String
+  skill              String
+  slug               String
+  class              String
+  category           String?
+  skillId            Int
+  type               String
+  description        String? @db.VarChar(2000)
+  baseValue          Float?
+  valueScaling       Float?
+  resourceGeneration Float?
+  luckyHitChance     Float?
+  imageUrl           String
+}
+
+model ExtraToSkill {
+  A Int
+  B Int
+
+  @@unique([A, B], map: "_ExtraToSkill_AB_unique")
+  @@index([B], map: "_ExtraToSkill_B_index")
+  @@map("_ExtraToSkill")
+}
+
+model FilterToSkill {
+  A Int
+  B Int
+
+  @@unique([A, B], map: "_FilterToSkill_AB_unique")
+  @@index([B], map: "_FilterToSkill_B_index")
+  @@map("_FilterToSkill")
+}
+
+model SkillToTag {
+  A Int
+  B Int
+
+  @@unique([A, B], map: "_SkillToTag_AB_unique")
+  @@index([B], map: "_SkillToTag_B_index")
+  @@map("_SkillToTag")
+}
+
+enum NumberFormat {
+  FLOAT
+  PERCENTAGE
+}
+
+enum PlayerClass {
+  Barbarian
+  Druid
+  Necromancer
+  Rogue
+  Sorcerer
+}
+
+enum Season {
+  ETERNAL
+  TWO
+  THREE
+}
+
+enum SkillType {
+  ACTIVE
+  PASSIVE
+  UPGRADE
+}
+
+enum SkillTags {
+  value1
+  value2
+  value3
+  value4
+  value5
+}
+
+enum AbilityType {
+  STATIC
+  DYNAMIC
+  STRING
+  TALENT
+}
